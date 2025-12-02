@@ -20,6 +20,11 @@ import java.util.List;
 /**
  * Configuration for the multi-layer cache application.
  * Sets up the cache layers, loader, and metrics.
+ * 
+ * Layer hierarchy:
+ * L1: In-Memory (5m TTL) - Ultra-fast access for hot data
+ * L2: In-Memory (1h TTL) - Intermediate cache for active data
+ * L3: File-Backed (CSV) - Persistent file storage, slowest layer
  */
 @Configuration
 public class CacheConfiguration {
@@ -27,6 +32,7 @@ public class CacheConfiguration {
     @Bean
     MultiLayerCache<String, List<String>> multiLayerCache(CacheMetrics metrics) throws Exception {
         // Create cache layers with different TTLs
+    public MultiLayerCache<String, List<String>> multiLayerCache(CacheMetrics metrics) throws Exception {
         // Layer 0: L1 cache (in-memory, short TTL, fast)
         CacheLayer<String, List<String>> l1 = new InMemoryLayer<>("L1-Memory", Duration.ofMinutes(5));
         
