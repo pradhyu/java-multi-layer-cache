@@ -17,6 +17,7 @@
             <groupId>org.ehcache</groupId>
             <artifactId>ehcache</artifactId>
             <version>3.11.0</version>
+            <classifier>jakarta</classifier>
         </dependency>
 
         <dependency>

@@ -12,7 +12,6 @@ import org.springframework.context.annotation.Configuration;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,7 +25,7 @@ import java.util.List;
 public class CacheConfiguration {
 
     @Bean
-    public MultiLayerCache<String, List<String>> multiLayerCache(CacheMetrics metrics) throws Exception {
+    MultiLayerCache<String, List<String>> multiLayerCache(CacheMetrics metrics) throws Exception {
         // Create cache layers with different TTLs
         // Layer 0: L1 cache (in-memory, short TTL, fast)
         CacheLayer<String, List<String>> l1 = new InMemoryLayer<>("L1-Memory", Duration.ofMinutes(5));
@@ -35,18 +34,20 @@ public class CacheConfiguration {
         CacheLayer<String, List<String>> l2 = new InMemoryLayer<>("L2-Memory", Duration.ofHours(1));
         
         // Layer 2: L3 cache (file-backed, persistent, CSV format)
-        Path cacheDir = Paths.get(System.getProperty("java.io.tmpdir"), "cache-data");
+        Path cacheDir = Path.of(System.getProperty("java.io.tmpdir"), "cache-data");
         Files.createDirectories(cacheDir);
         
         // Create a sample CSV file for demonstration
         Path sampleFile = cacheDir.resolve("data.csv");
         if (!Files.exists(sampleFile)) {
             Files.writeString(sampleFile, 
-                "key,value1,value2,value3\n" +
-                "user:1,John,Doe,Active\n" +
-                "user:2,Jane,Smith,Active\n" +
-                "product:1,Laptop,Electronics,Available\n" +
-                "product:2,Phone,Electronics,Available\n",
+                """
+                key,value1,value2,value3
+                user:1,John,Doe,Active
+                user:2,Jane,Smith,Active
+                product:1,Laptop,Electronics,Available
+                product:2,Phone,Electronics,Available
+                """,
                 StandardCharsets.UTF_8);
         }
         
@@ -63,7 +64,7 @@ public class CacheConfiguration {
     }
 
     @Bean
-    public CacheService cacheService(MultiLayerCache<String, List<String>> multiLayerCache) {
+    CacheService cacheService(MultiLayerCache<String, List<String>> multiLayerCache) {
         return new CacheService(multiLayerCache);
     }
 }
