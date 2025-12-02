@@ -46,15 +46,9 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>repackage</id>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                        <phase>none</phase>
-                    </execution>
-                </executions>
+                <configuration>
+                    <mainClass>com.example.cache.app.CacheApplication</mainClass>
+                </configuration>
             </plugin>
         </plugins>
     </build>
