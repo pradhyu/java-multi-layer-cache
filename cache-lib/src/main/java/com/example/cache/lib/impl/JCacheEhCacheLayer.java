@@ -61,13 +61,12 @@ public class JCacheEhCacheLayer<K, V> implements CacheLayer<K, V> {
         // Create cache manager
         this.cacheManager = cachingProvider.getCacheManager();
 
-        // Build EhCache configuration
+        // Build EhCache configuration (heap-only for simplicity)
         org.ehcache.config.CacheConfiguration<K, V> ehcacheConfig = CacheConfigurationBuilder
                 .newCacheConfigurationBuilder(
                         keyClass, valueClass,
                         ResourcePoolsBuilder.newResourcePoolsBuilder()
-                                .heap(maxSizeInMB, MemoryUnit.MB)
-                                .disk(maxSizeInMB * 2L, MemoryUnit.MB, false))
+                                .heap(maxSizeInMB, MemoryUnit.MB)) // Heap-only, no disk
                 .build();
 
         // Wrap EhCache config in JCache config
@@ -82,8 +81,9 @@ public class JCacheEhCacheLayer<K, V> implements CacheLayer<K, V> {
 
         // Register with Micrometer if provided
         if (meterRegistry != null) {
-            JCacheMetrics.monitor(meterRegistry, cache, name);
+            JCacheMetrics.monitor(meterRegistry, cache, "cache", name);
         }
+
     }
 
     @Override
