@@ -3,17 +3,9 @@ package com.example.cache.lib.impl;
 import com.example.cache.lib.CacheLayer;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.cache.JCacheMetrics;
-import org.ehcache.config.builders.CacheConfigurationBuilder;
-import org.ehcache.config.builders.CacheManagerBuilder;
-import org.ehcache.config.builders.ResourcePoolsBuilder;
-import org.ehcache.config.units.MemoryUnit;
-import org.ehcache.jsr107.EhcacheCachingProvider;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
-import javax.cache.Caching;
-import javax.cache.configuration.Configuration;
-import javax.cache.spi.CachingProvider;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
@@ -44,46 +36,27 @@ public class JCacheEhCacheLayer<K, V> implements CacheLayer<K, V> {
      * Create a JCache-wrapped EHCache layer with Micrometer metrics.
      *
      * @param name          the layer name
-     * @param maxSizeInMB   maximum heap size in MB
-     * @param keyClass      the key class type
-     * @param valueClass    the value class type
+     * @param cache         the JCache instance to wrap
      * @param meterRegistry Micrometer registry for metrics (can be null)
      */
-    public JCacheEhCacheLayer(String name, int maxSizeInMB,
-            Class<K> keyClass, Class<V> valueClass,
-            MeterRegistry meterRegistry) {
+    public JCacheEhCacheLayer(String name, Cache<K, V> cache, MeterRegistry meterRegistry) {
         this.name = name;
+        this.cache = cache;
+        this.cacheManager = cache.getCacheManager();
 
-        // Get EhCache's JCache provider
-        CachingProvider cachingProvider = Caching.getCachingProvider(
-                "org.ehcache.jsr107.EhcacheCachingProvider");
-
-        // Create cache manager
-        this.cacheManager = cachingProvider.getCacheManager();
-
-        // Build EhCache configuration (heap-only for simplicity)
-        org.ehcache.config.CacheConfiguration<K, V> ehcacheConfig = CacheConfigurationBuilder
-                .newCacheConfigurationBuilder(
-                        keyClass, valueClass,
-                        ResourcePoolsBuilder.newResourcePoolsBuilder()
-                                .heap(maxSizeInMB, MemoryUnit.MB)) // Heap-only, no disk
-                .build();
-
-        // Wrap EhCache config in JCache config
-        Configuration<K, V> jcacheConfig = org.ehcache.jsr107.Eh107Configuration
-                .fromEhcacheCacheConfiguration(ehcacheConfig);
-
-        // Create cache with statistics enabled
-        this.cache = cacheManager.createCache(name, jcacheConfig);
-
-        // Enable statistics
-        cache.getCacheManager().enableStatistics(name, true);
+        // Enable statistics if not already enabled
+        // Note: This might fail if cache is already closed or configured differently,
+        // but standard JCache allows enabling stats at runtime.
+        try {
+            cache.getCacheManager().enableStatistics(name, true);
+        } catch (Exception e) {
+            // Ignore if already enabled or not supported
+        }
 
         // Register with Micrometer if provided
         if (meterRegistry != null) {
             JCacheMetrics.monitor(meterRegistry, cache, "cache", name);
         }
-
     }
 
     @Override

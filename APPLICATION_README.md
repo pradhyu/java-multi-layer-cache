@@ -13,19 +13,24 @@ The application implements a three-layer cache hierarchy:
    - Automatic expiration after 5 minutes
    - Limited to actively used items
 
-2. **L2 Cache (In-Memory)** - Medium speed, longer TTL (1 hour)
-   - Intermediate cache for less frequently accessed data
-   - Longer retention period of 1 hour
+2. **L2 Cache (EhCache)** - Medium speed, longer TTL (1 hour)
+   - Off-heap/Disk-backed cache
+   - Longer retention period
    - Fallback for L1 evictions
 
-3. **L3 Cache (File-Backed)** - Persistent storage
+3. **L3 Cache (Redis)** - Network Cache (30 minutes TTL)
+   - Distributed/Shared cache
+   - Resilient to application restarts
+   - Shared across multiple instances
+
+4. **Loader (File-Backed)** - Persistent storage
    - CSV file-based persistent storage
    - Automatic loading from file system
-   - Survives application restarts
+   - Source of truth
 
 ## Features
 
-- ✅ **Multi-tier Caching**: Automatic cache promotion across layers
+- ✅ **Multi-tier Caching**: Automatic cache promotion across layers (L1 -> L2 -> L3 -> File)
 - ✅ **Single-flight Loading**: Prevents thundering herd problem
 - ✅ **Metrics Integration**: Micrometer-based metrics collection
 - ✅ **Health Checks**: Spring Boot Actuator endpoints
@@ -38,6 +43,7 @@ The application implements a three-layer cache hierarchy:
 ### Prerequisites
 - Java 21 (LTS)
 - Maven 3.6+
+- Redis (Optional, defaults to localhost:6379)
 
 ### Build Commands
 
@@ -226,8 +232,8 @@ java -jar cache-app/target/cache-app-0.0.1-SNAPSHOT.jar
 
 - **L1 Cache Hit**: < 1ms (in-memory lookup)
 - **L2 Cache Hit**: < 5ms (in-memory with TTL check)
-- **L3 Cache Hit**: 10-100ms (file I/O)
-- **Cache Miss**: 50-200ms (file parsing and cache population)
+- **L3 Cache Hit**: 5-20ms (Redis network call)
+- **Loader**: 50-200ms (file I/O and parsing)
 
 ## Technologies
 
@@ -235,6 +241,8 @@ java -jar cache-app/target/cache-app-0.0.1-SNAPSHOT.jar
 - **Spring Boot**: 3.1.6
 - **Spring Framework**: 6.0.14
 - **Micrometer**: 1.11.6 (metrics)
+- **Redis (Jedis)**: 5.1.0
+- **EhCache**: 3.x
 - **Maven**: Build automation
 - **Apache Commons CSV**: CSV file parsing
 
